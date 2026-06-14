@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: site-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-site}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-site}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: production
+    image: site-backend
+    container_name: site-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-site}
+      SECRET_KEY: ${SECRET_KEY:-change-me-to-a-long-random-string}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost}
+      SQLALCHEMY_ECHO: ${SQLALCHEMY_ECHO:-false}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    image: site-frontend
+    container_name: site-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+
+  test:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+      target: test
+    image: site-test
+    profiles: ["test"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-site}
+      SECRET_KEY: ${SECRET_KEY:-test-secret-key}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30000
+      CORS_ORIGINS: http://localhost:5173
+      SQLALCHEMY_ECHO: false
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cd /app/backend && alembic upgrade head
+        cd /app && python -m backend.app.db.seed
+        cd /app/backend && pytest -q -o addopts=
+
+volumes:
+  postgres_data:
