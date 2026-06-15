@@ -15,6 +15,8 @@ sys.path.insert(0, str(site_dir))
 from backend.app.core.config import get_settings
 from backend.app.db.session import Base
 
+import backend.app.models  # noqa: F401 — для target_metadata
+
 config = context.config
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)

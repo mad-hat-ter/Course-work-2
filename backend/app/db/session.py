@@ -15,6 +15,8 @@ AsyncSessionLocal = async_sessionmaker(
 
 Base = declarative_base()
 
+import backend.app.models
+
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:

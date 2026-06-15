@@ -54,4 +54,4 @@ class Shift_user(Base):
     user_id = Column(Integer, ForeignKey('user.id', ondelete="RESTRICT"))
     user = relationship("User", back_populates="shift_user")
     shift = relationship("Shift", back_populates="shift_user")
-    __table_args__ = (UniqueConstraint('shift_id', 'user_id', name='_shift_user_uc'))
+    __table_args__ = (UniqueConstraint('shift_id', 'user_id', name='_shift_user_uc'),)
