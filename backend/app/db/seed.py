@@ -2,6 +2,7 @@ import asyncio
 from sqlalchemy import select
 from backend.app.core import security
 from backend.app.db.session import AsyncSessionLocal
+from backend.app.models.shift import Shift_type
 from backend.app.models.user import Department, Position, Roles, User
 
 ADMIN_EMAIL = "test@mail.ru"
@@ -15,6 +16,26 @@ POSITIONS = (
     "Куратора по математике",
 )
 ADMIN_POSITION_TITLE = "Руководитель отдела кураторов по математике"
+SHIFT_TYPES = (
+    {
+        "title": "Дневная смена",
+        "rate": 100.0,
+        "quantity_for_increased_payment": 14,
+        "increased_payment": 150.0,
+    },
+    {
+        "title": "Смена во время вебинара",
+        "rate": 120.0,
+        "quantity_for_increased_payment": None,
+        "increased_payment": None,
+    },
+    {
+        "title": "Ночная смена",
+        "rate": 150.0,
+        "quantity_for_increased_payment": None,
+        "increased_payment": None,
+    },
+)
 
 
 async def _get_or_create_department(session) -> Department:
@@ -73,7 +94,24 @@ async def seed_admin() -> None:
         print(f"Создан администратор: {ADMIN_EMAIL}")
 
 
+async def seed_shift_types() -> None:
+    async with AsyncSessionLocal() as session:
+        created = 0
+        for item in SHIFT_TYPES:
+            existing = await session.execute(select(Shift_type).where(Shift_type.title == item["title"]))
+            if existing.scalar_one_or_none():
+                continue
+            session.add(Shift_type(**item))
+            created += 1
+        if created:
+            await session.commit()
+            print(f"Создано типов смен: {created}")
+        else:
+            print("Типы смен уже существуют, пропуск.")
+
+
 async def seed_database() -> None:
+    await seed_shift_types()
     await seed_positions()
     await seed_admin()
 
