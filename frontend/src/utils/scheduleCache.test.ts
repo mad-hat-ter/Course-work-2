@@ -43,6 +43,8 @@ const baseSchedule = (): Schedule => ({
   ],
 });
 
+const firstShift = (schedule: Schedule) => schedule.shift_schedule[0]!.shift!;
+
 describe('scheduleCache', () => {
   const storage = new Map<string, string>();
 
@@ -94,11 +96,11 @@ describe('scheduleCache', () => {
       end_time: '2026-06-23T17:00:00',
       is_free: true,
       max_user: 2,
-      shift_type: baseSchedule().shift_schedule[0].shift.shift_type,
+      shift_type: firstShift(baseSchedule()).shift_type,
       shift_user: [],
     });
 
-    const users = updated.shift_schedule[0].shift.shift_user ?? [];
+    const users = firstShift(updated).shift_user ?? [];
     expect(users).toHaveLength(1);
     expect(users[0].user_id).toBe(5);
     expect(users[0].user?.name).toBe('Иван');
@@ -112,11 +114,11 @@ describe('scheduleCache', () => {
       end_time: '2026-06-23T17:00:00',
       is_free: true,
       max_user: 2,
-      shift_type: baseSchedule().shift_schedule[0].shift.shift_type,
+      shift_type: firstShift(baseSchedule()).shift_type,
       shift_user: [{ id: 99, shift_id: 10, user_id: 5, user: null }],
     });
 
-    const users = updated.shift_schedule[0].shift.shift_user ?? [];
+    const users = firstShift(updated).shift_user ?? [];
     expect(users).toHaveLength(1);
     expect(users[0].id).toBe(99);
   });
@@ -129,7 +131,7 @@ describe('scheduleCache', () => {
       end_time: '2026-06-23T17:00:00',
       is_free: true,
       max_user: 2,
-      shift_type: baseSchedule().shift_schedule[0].shift.shift_type,
+      shift_type: firstShift(baseSchedule()).shift_type,
       shift_user: [{ id: 99, shift_id: 10, user_id: 5, user: null }],
     });
 
@@ -148,9 +150,7 @@ describe('scheduleCache', () => {
     } as User;
 
     const updated = applyShiftAssignment(schedule, 10, 5, user, undefined);
-    expect(updated.shift_schedule[0].shift.shift_user?.[0].user?.name).toBe(
-      'Иван'
-    );
+    expect(firstShift(updated).shift_user?.[0].user?.name).toBe('Иван');
   });
 
   it('удаляет пользователя по user_id при временном id', () => {
@@ -161,7 +161,7 @@ describe('scheduleCache', () => {
       end_time: '2026-06-23T17:00:00',
       is_free: true,
       max_user: 2,
-      shift_type: baseSchedule().shift_schedule[0].shift.shift_type,
+      shift_type: firstShift(baseSchedule()).shift_type,
       shift_user: [{ id: 1781212955891, shift_id: 10, user_id: 5, user: null }],
     });
 
@@ -171,6 +171,6 @@ describe('scheduleCache', () => {
       5,
       10
     );
-    expect(updated.shift_schedule[0].shift.shift_user).toEqual([]);
+    expect(firstShift(updated).shift_user).toEqual([]);
   });
 });
