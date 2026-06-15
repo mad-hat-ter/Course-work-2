@@ -20,6 +20,12 @@ const user: User = {
   registration_date: '2026-01-01T00:00:00',
   last_login: null,
   position_id: 1,
+  position: {
+    id: 1,
+    title: 'Специалист чата поддержки',
+    department_id: 1,
+    department: { id: 1, title: 'Чат поддержки' },
+  },
 };
 
 describe('format', () => {
